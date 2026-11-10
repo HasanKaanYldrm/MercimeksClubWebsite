@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Yönetim · Mercimek’s Club</title>
+  <link rel="icon" href="./logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./admin.js"></script>
+</head>
+<body>
+  <header class="top shell">
+    <a class="brand" href="/"><img src="./logo.jpg" alt="" width="48" height="48"><span>Mercimek’s Club</span></a>
+    <a class="quiet" href="/">Listeye dön <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="shell admin">
+    <p id="admin-status" class="notice" role="status">Yönetim panelini kullanmak için siteyi yerel sunucudan açın.</p>
+    <section id="login" class="panel login-panel" hidden>
+      <p class="eyebrow accent">YÖNETİM</p>
+      <h1>Yönetici girişi</h1>
+      <form id="login-form">
+        <label>Yönetici parolası<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+        <button class="button primary" type="submit">Giriş yap <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+    <div id="dashboard" hidden>
+      <div class="section-head admin-head">
+        <div><p class="eyebrow accent">KAMPANYA YÖNETİMİ</p><h1>Yönetim paneli</h1></div>
+        <button id="logout" class="button outline" type="button">Oturumu kapat</button>
+      </div>
+      <div class="admin-grid">
+        <section class="panel">
+          <h2>Yeni ürün</h2>
+          <form id="product-form">
+            <label>Ürün adı<input name="name" required minlength="2" maxlength="100"></label>
+            <label>Açıklama<textarea name="description" rows="3" required minlength="2" maxlength="1500"></textarea></label>
+            <label>Satın alma bağlantısı<input name="url" type="url" required maxlength="2048" placeholder="https://"></label>
+            <label>Hedef adet<input name="target" type="number" inputmode="numeric" required min="1" max="1000000"></label>
+            <button class="button primary" type="submit">Ürünü ekle <span aria-hidden="true">+</span></button>
+          </form>
+        </section>
+        <section class="panel">
+          <h2>Ürün hedefleri</h2>
+          <div id="targets"></div>
+        </section>
+      </div>
+      <section class="panel records">
+        <div class="section-head">
+          <div><h2>Satın alma bildirimleri</h2><p class="muted">Bildirim saatleri Türkiye saatine göre gösterilir.</p></div>
+          <button id="export" class="button outline" type="button">Excel’i indir <span aria-hidden="true">↓</span></button>
+        </div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Satın alma bildirimleri">
+          <table>
+            <thead><tr><th scope="col">Tarih</th><th scope="col">Ad soyad</th><th scope="col">Telefon</th><th scope="col">Ürün</th><th scope="col">Adet</th><th scope="col">Tarayıcı kimliği</th></tr></thead>
+            <tbody id="purchases"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button id="previous" class="button outline" type="button">← Önceki</button>
+          <span id="page" class="muted"></span>
+          <button id="next" class="button outline" type="button">Sonraki →</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

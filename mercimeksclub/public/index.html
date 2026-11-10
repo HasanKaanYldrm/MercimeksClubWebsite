@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mercimeks Club ihtiyaç listesinden bir ürün seç ve TEV İnanç Lisesi'ne destek ol.">
+  <title>Mercimek’s Club · İhtiyaç Listesi</title>
+  <link rel="icon" href="./logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./site.js"></script>
+</head>
+<body>
+  <header class="top shell">
+    <a class="brand" href="/"><img src="./logo.jpg" alt="" width="48" height="48"><span>Mercimek’s Club</span></a>
+    <a class="quiet" href="/admin">Yönetim <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="shell">
+    <section class="hero" aria-labelledby="headline">
+      <div class="hero-copy">
+        <p class="eyebrow">TEV İNANÇ LİSESİ</p>
+        <h1 id="headline">Kedilerimiz için<br>ihtiyaç listesi</h1>
+        <p>İhtiyaç listesinden bir ürün seç, TEV İnanç Lisesi’ne sipariş ver ve katkını bize bildir.</p>
+        <a class="button primary" href="#liste">Ürünleri gör <span aria-hidden="true">↓</span></a>
+      </div>
+      <img class="hero-art" src="./club.jpg" alt="Mercimek’s Club’ın üç kedisinin yer aldığı kulüp görseli" width="612" height="612">
+    </section>
+    <section id="liste" class="list-section" aria-labelledby="list-title">
+      <div class="section-head">
+        <h2 id="list-title">İhtiyaç duyulan ürünler</h2>
+        <span id="total" class="pill" hidden></span>
+      </div>
+      <p class="muted intro">Ürün ayrıntılarını görmek ve satın aldığın adedi bildirmek için bir satırı aç.</p>
+      <p id="status" class="notice" role="status">Ürün listesini görmek için siteyi yerel sunucudan açın.</p>
+      <div id="products" class="product-list"></div>
+    </section>
+  </main>
+  <footer class="shell footer"><span>Mercimek’s Club</span><span>TEV İnanç Lisesi</span></footer>
+  <dialog id="report" aria-labelledby="report-title">
+    <div class="dialog-head">
+      <div><p class="eyebrow accent">KATKINI BİLDİR</p><h2 id="report-title">Satın aldım</h2></div>
+      <button id="close" class="icon-button" type="button" aria-label="Formu kapat">×</button>
+    </div>
+    <p id="selected" class="muted"></p>
+    <form id="report-form">
+      <label>Ad soyad<input name="name" autocomplete="name" required minlength="2" maxlength="100"></label>
+      <label>Telefon numarası<input name="phone" type="tel" autocomplete="tel" required minlength="7" maxlength="30" placeholder="05xx xxx xx xx"></label>
+      <label>Satın alınan adet<input name="quantity" type="number" inputmode="numeric" required min="1" max="10000" value="1"></label>
+      <p class="privacy">Adın, telefonun, satın aldığın adet, kayıt zamanı ve bu siteye özel tarayıcı kimliği kampanya takibi için saklanır. Adını, telefonunu ve tarayıcı kimliğini yalnızca yetkili yöneticiler görüntüleyebilir. <span id="privacy-contact"></span></p>
+      <p id="form-status" class="feedback" role="status" hidden></p>
+      <button class="button primary" type="submit">Bildirimi gönder <span aria-hidden="true">→</span></button>
+    </form>
+  </dialog>
+</body>
+</html>

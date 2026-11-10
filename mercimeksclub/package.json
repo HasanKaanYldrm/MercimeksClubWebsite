@@ -1,0 +1,14 @@
+{
+  "name": "mercimeksclub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "admin:hash": "node scripts/password.js"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "pg": "^8.16.3"
+  }
+}
