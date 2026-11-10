@@ -22,7 +22,10 @@ function makeProduct(product, index, openIds) {
   progress.max = product.target;
   progress.value = Math.min(received, product.target);
   progress.setAttribute('aria-label', product.name + ' hedef ilerlemesi');
-  const caption = number.format(received) + ' / ' + number.format(product.target) + ' adet bildirildi';
+  const goal = 'Hedefimiz ' + number.format(product.target) + ' adet';
+  const caption = received
+    ? 'Şu ana kadar ' + number.format(received) + ' adet alındı · ' + goal
+    : goal + ' · İlk katkı senden gelebilir!';
   const stats = node('span', undefined, 'progress');
   stats.append(node('span', caption), progress);
   const chevron = node('span', '⌄', 'chevron');
@@ -30,11 +33,11 @@ function makeProduct(product, index, openIds) {
   summary.append(serial, node('span', product.name, 'product-name'), stats, chevron);
   const body = node('div', undefined, 'product-body');
   const actions = node('div', undefined, 'actions');
-  const link = node('a', 'Ürün bağlantısını aç ↗', 'button outline');
+  const link = node('a', 'Satın al', 'button outline');
   link.href = product.url;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.setAttribute('aria-label', product.name + ' satın alma bağlantısını yeni sekmede aç');
+  link.setAttribute('aria-label', 'Satın al: ' + product.name + ' (yeni sekmede açılır)');
   const report = node('button', 'Satın aldım', 'button primary');
   report.type = 'button';
   report.addEventListener('click', async () => {
@@ -62,7 +65,7 @@ function makeProduct(product, index, openIds) {
   actions.append(link, report);
   body.append(
     node('p', product.description, 'description'),
-    node('p', 'Ürünü aşağıdaki bağlantıdan satın al. Teslimat adresi olarak TEV İnanç Lisesi’nin doğrulanmış adresini kullan. Siparişi tamamladıktan sonra “Satın aldım” düğmesiyle adedi bildir.', 'instructions'),
+    node('p', '“Satın al” düğmesinden ürüne ulaşıp siparişini TEV İnanç Lisesi’ne gönderebilirsin. Siparişi verdikten sonra “Satın aldım” düğmesine tıklayıp kaç tane aldığını bize söylersen çok seviniriz!', 'instructions'),
     actions
   );
   item.append(summary, body);
