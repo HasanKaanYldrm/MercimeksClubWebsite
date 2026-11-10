@@ -11,26 +11,36 @@ let initializingDevice;
 let saving = false;
 
 function makeProduct(product, index, openIds) {
-  const item = node('details', undefined, 'product');
+  const received = Number(product.received);
+  const complete = received >= product.target;
+  const item = node(complete ? 'article' : 'details', undefined, 'product');
   item.dataset.id = product.id;
-  item.open = openIds.has(product.id);
-  const summary = node('summary');
+  if (complete) {
+    item.classList.add('product-complete');
+    item.tabIndex = -1;
+  } else {
+    item.open = openIds.has(product.id);
+  }
+  const summary = node(complete ? 'div' : 'summary', undefined, 'product-row');
   const serial = node('span', String(index + 1).padStart(2, '0'), 'item-number');
   serial.setAttribute('aria-hidden', 'true');
-  const received = Number(product.received);
   const progress = node('progress');
   progress.max = product.target;
   progress.value = Math.min(received, product.target);
   progress.setAttribute('aria-label', product.name + ' hedef ilerlemesi');
-  const goal = 'Hedefimiz ' + number.format(product.target) + ' adet';
-  const caption = received
+  const target = number.format(product.target);
+  const goal = 'Hedefimiz ' + target + ' adet';
+  let caption = received
     ? 'Şu ana kadar ' + number.format(received) + ' adet alındı · ' + goal
     : goal + ' · İlk katkı senden gelebilir!';
+  if (complete) caption = 'Hedefimiz ' + target + ' adetti · Hedefe ulaştık!';
   const stats = node('span', undefined, 'progress');
   stats.append(node('span', caption), progress);
-  const chevron = node('span', '⌄', 'chevron');
-  chevron.setAttribute('aria-hidden', 'true');
-  summary.append(serial, node('span', product.name, 'product-name'), stats, chevron);
+  const indicator = node('span', complete ? '✓' : '⌄', 'chevron');
+  indicator.setAttribute('aria-hidden', 'true');
+  summary.append(serial, node('span', product.name, 'product-name'), stats, indicator);
+  item.append(summary);
+  if (complete) return item;
   const body = node('div', undefined, 'product-body');
   const actions = node('div', undefined, 'actions');
   const link = node('a', 'Satın al', 'button outline');
@@ -68,7 +78,7 @@ function makeProduct(product, index, openIds) {
     node('p', '“Satın al” düğmesinden ürüne ulaşıp siparişini TEV İnanç Lisesi’ne gönderebilirsin. Siparişi verdikten sonra “Satın aldım” düğmesine tıklayıp kaç tane aldığını bize söylersen çok seviniriz!', 'instructions'),
     actions
   );
-  item.append(summary, body);
+  item.append(body);
   return item;
 }
 
@@ -82,7 +92,10 @@ async function refresh(success = '', focusId = '') {
     total.hidden = !products.length;
     byId('privacy-contact').textContent = privacyContact ? 'İletişim: ' + privacyContact : '';
     message(status, success || (products.length ? '' : 'Listeye henüz ürün eklenmedi.'));
-    if (focusId) list.querySelector('[data-id="' + focusId + '"] summary')?.focus();
+    if (focusId) {
+      const item = list.querySelector('[data-id="' + focusId + '"]');
+      (item?.querySelector('summary') ?? item)?.focus();
+    }
   } catch (error) {
     message(status, [success, error.message].filter(Boolean).join(' '), true);
   }

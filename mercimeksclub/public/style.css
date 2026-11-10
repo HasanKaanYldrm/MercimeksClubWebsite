@@ -58,11 +58,19 @@ button, input, textarea { font: inherit; }
 .notice[data-error="true"], .feedback[data-error="true"] { color: #7f2b20; background: #f8e8e1; }
 .product-list { display: grid; gap: 12px; margin-top: 23px; }
 .product { border: 1px solid var(--line); border-radius: 17px; background: var(--white); }
-.product summary {
+.product-row {
   display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(140px, 230px) auto;
-  gap: 15px; align-items: center; cursor: pointer; padding: 18px; list-style: none;
+  gap: 15px; align-items: center; padding: 18px;
 }
+.product summary { cursor: pointer; list-style: none; }
 .product summary::-webkit-details-marker { display: none; }
+.product-complete {
+  --accent: #23613c;
+  --wash: #dceee0;
+  --line: #b3d5bc;
+  --muted: #315e40;
+  background: #f0f8f1;
+}
 .item-number, .chevron { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 12px; background: var(--wash); color: var(--accent); font-weight: 800; }
 .chevron { background: transparent; width: 28px; font-size: 1.2rem; }
 .product[open] .chevron { transform: rotate(180deg); }
@@ -115,7 +123,7 @@ td:last-child { min-width: 170px; }
   .admin-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
-  .product summary { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 10px; padding: 13px; }
+  .product-row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 10px; padding: 13px; }
   .progress { grid-row: 2; grid-column: 2; }
   .chevron { grid-row: 1 / span 2; grid-column: 3; }
   .item-number { grid-row: 1 / span 2; }
