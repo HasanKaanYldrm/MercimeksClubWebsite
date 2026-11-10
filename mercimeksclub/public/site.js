@@ -75,7 +75,7 @@ function makeProduct(product, index, openIds) {
   actions.append(link, report);
   body.append(
     node('p', product.description, 'description'),
-    node('p', '“Satın al” düğmesinden ürüne ulaşıp siparişini TEV İnanç Lisesi’ne gönderebilirsin. Siparişi verdikten sonra “Satın aldım” düğmesine tıklayıp kaç tane aldığını bize söylersen çok seviniriz!', 'instructions'),
+    node('p', '“Satın al” düğmesinden ürüne ulaşıp siparişini TEV İnanç Lisesi’ne kargolayabilirsin. Siparişi verdikten sonra “Satın aldım” düğmesine tıklayıp kaç tane aldığını bize söylersen çok seviniriz!', 'instructions'),
     actions
   );
   item.append(body);
