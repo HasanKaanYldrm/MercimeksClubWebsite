@@ -41,7 +41,7 @@
           </form>
         </section>
         <section class="panel">
-          <h2>Ürün hedefleri</h2>
+          <h2>Ürünler</h2>
           <div id="targets"></div>
         </section>
       </div>
@@ -52,7 +52,7 @@
         </div>
         <div class="table-wrap" tabindex="0" role="region" aria-label="Satın alma bildirimleri">
           <table>
-            <thead><tr><th scope="col">Tarih</th><th scope="col">Ad soyad</th><th scope="col">Telefon</th><th scope="col">Ürün</th><th scope="col">Adet</th><th scope="col">Tarayıcı kimliği</th></tr></thead>
+            <thead><tr><th scope="col">Tarih</th><th scope="col">Ad soyad</th><th scope="col">Telefon</th><th scope="col">Ürün</th><th scope="col">Adet</th><th scope="col">Tarayıcı kimliği</th><th scope="col">İşlemler</th></tr></thead>
             <tbody id="purchases"></tbody>
           </table>
         </div>
@@ -64,5 +64,26 @@
       </section>
     </div>
   </main>
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <div class="dialog-head">
+      <h2 id="edit-title"></h2>
+      <button id="edit-close" class="icon-button" type="button" aria-label="Kapat">×</button>
+    </div>
+    <p id="edit-status" class="feedback" role="status" hidden></p>
+    <form id="edit-product" hidden>
+      <label>Ürün adı<input name="name" required minlength="2" maxlength="100"></label>
+      <label>Açıklama<textarea name="description" rows="3" required minlength="2" maxlength="1500"></textarea></label>
+      <label>Satın alma bağlantısı<input name="url" type="url" required maxlength="2048"></label>
+      <label>Hedef adet<input name="target" type="number" inputmode="numeric" required min="1" max="1000000"></label>
+      <button class="button primary" type="submit">Değişiklikleri kaydet</button>
+    </form>
+    <form id="edit-purchase" hidden>
+      <label>Ad soyad<input name="name" required minlength="2" maxlength="100"></label>
+      <label>Telefon<input name="phone" type="tel" required minlength="7" maxlength="30"></label>
+      <label>Ürün<select name="productId" required></select></label>
+      <label>Adet<input name="quantity" type="number" inputmode="numeric" required min="1" max="10000"></label>
+      <button class="button primary" type="submit">Değişiklikleri kaydet</button>
+    </form>
+  </dialog>
 </body>
 </html>
