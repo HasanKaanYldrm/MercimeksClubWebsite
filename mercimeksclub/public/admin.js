@@ -9,16 +9,24 @@ const targetList = byId('targets');
 const purchaseList = byId('purchases');
 const previous = byId('previous');
 const next = byId('next');
+const editor = byId('edit-dialog');
+const editClose = byId('edit-close');
+const editStatus = byId('edit-status');
+const editProduct = byId('edit-product');
+const editPurchase = byId('edit-purchase');
 const date = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'short', timeStyle: 'medium', timeZone: 'Europe/Istanbul'
 });
 let page = 1;
-let loading = false;
+let products = [];
+let hasMore = false;
+let editingId;
 let revision = 0;
 
 function showLogin() {
   revision++;
-  loading = false;
+  products = [];
+  if (editor.open) editor.close();
   dashboard.hidden = true;
   targetList.replaceChildren();
   purchaseList.replaceChildren();
@@ -32,34 +40,62 @@ function showError(error) {
   status.scrollIntoView({ block: 'nearest' });
 }
 
-function makeTarget(product) {
-  const form = node('form', undefined, 'target-form');
-  const name = node('strong', product.name);
-  const label = node('label', 'Hedef adet');
-  const input = node('input');
-  input.type = 'number';
-  input.min = 1;
-  input.max = 1000000;
-  input.required = true;
-  input.value = product.target;
-  input.setAttribute('aria-label', product.name + ' hedef adedi');
-  label.append(input);
-  const save = node('button', 'Kaydet', 'button outline');
-  save.type = 'submit';
-  form.append(name, label, save);
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-    await busy(save, async () => {
+function openEditor(form, record) {
+  const purchase = form === editPurchase;
+  editProduct.hidden = purchase;
+  editPurchase.hidden = !purchase;
+  if (purchase) {
+    const options = products.map(product => {
+      const option = node('option', product.name);
+      option.value = product.id;
+      return option;
+    });
+    form.elements.productId.replaceChildren(...options);
+    form.elements.productId.value = record.product_id;
+  }
+  for (const field of form.elements) {
+    if (Object.hasOwn(record, field.name)) field.value = record[field.name];
+  }
+  editingId = record.id;
+  byId('edit-title').textContent = purchase ? 'Bildirimi düzenle' : 'Ürünü düzenle';
+  message(editStatus, '');
+  editor.showModal();
+}
+
+function makeActions(record, kind) {
+  const purchase = kind === 'purchase';
+  const actions = node('div', undefined, 'admin-actions');
+  const edit = node('button', 'Düzenle', 'button outline');
+  const remove = node('button', 'Sil', 'button outline danger');
+  edit.type = remove.type = 'button';
+  edit.setAttribute('aria-label', record.name + ' kaydını düzenle');
+  remove.setAttribute('aria-label', record.name + ' kaydını sil');
+  edit.addEventListener('click', () => openEditor(purchase ? editPurchase : editProduct, record));
+  remove.addEventListener('click', async () => {
+    const confirmation = purchase
+      ? record.name + ' adına ait “' + record.product + '” bildirimi silinsin mi?'
+      : '“' + record.name + '” ürünü ve bu ürüne ait tüm bildirimler kalıcı olarak silinsin mi?';
+    if (!window.confirm(confirmation)) return;
+    await busy(remove, async () => {
       try {
-        await request('target', { body: { id: product.id, target: Number(input.value) } });
-        message(status, product.name + ' hedefi güncellendi.');
+        await request('delete-' + kind, { body: { id: record.id } });
+        await refresh(page, purchase ? 'Bildirim silindi.' : 'Ürün ve bağlı bildirimler silindi.');
         status.scrollIntoView({ block: 'nearest' });
       } catch (error) {
         showError(error);
       }
     });
   });
-  return form;
+  actions.append(edit, remove);
+  return actions;
+}
+
+function makeProductRow(product) {
+  const row = node('div', undefined, 'admin-product');
+  const details = node('div');
+  details.append(node('strong', product.name), node('p', 'Hedef: ' + number.format(product.target) + ' adet', 'muted'));
+  row.append(details, makeActions(product, 'product'));
+  return row;
 }
 
 function renderPurchases(purchases) {
@@ -70,12 +106,15 @@ function renderPurchases(purchases) {
       purchase.product, number.format(purchase.quantity), purchase.device_id
     ];
     row.append(...cells.map(text => node('td', text)));
+    const actions = node('td');
+    actions.append(makeActions(purchase, 'purchase'));
+    row.append(actions);
     return row;
   });
   if (!rows.length) {
     const row = node('tr');
     const cell = node('td', 'Henüz satın alma bildirimi yok.');
-    cell.colSpan = 6;
+    cell.colSpan = 7;
     row.append(cell);
     rows.push(row);
   }
@@ -83,36 +122,74 @@ function renderPurchases(purchases) {
 }
 
 async function refresh(newPage = 1, success = '', first = false) {
-  if (loading) return;
-  loading = true;
-  const current = revision;
-  const wasPreviousDisabled = previous.disabled;
-  const wasNextDisabled = next.disabled;
+  const current = ++revision;
   previous.disabled = next.disabled = true;
   try {
-    const { products, purchases, hasMore } = await request('admin', { query: { page: newPage } });
+    let result = await request('admin', { query: { page: newPage } });
     if (revision !== current) return;
+    if (newPage > 1 && !result.purchases.length) {
+      newPage = 1;
+      result = await request('admin', { query: { page: newPage } });
+      if (revision !== current) return;
+    }
     page = newPage;
-    targetList.replaceChildren(...(products.length ? products.map(makeTarget) : [
+    products = result.products;
+    hasMore = result.hasMore;
+    targetList.replaceChildren(...(products.length ? products.map(makeProductRow) : [
       node('p', 'Henüz ürün eklenmedi.', 'notice')
     ]));
-    renderPurchases(purchases);
+    renderPurchases(result.purchases);
     byId('page').textContent = 'Sayfa ' + number.format(page);
-    previous.disabled = page === 1;
-    next.disabled = !hasMore;
     login.hidden = true;
     dashboard.hidden = false;
     message(status, success);
   } catch (error) {
     if (revision !== current) return;
-    previous.disabled = wasPreviousDisabled;
-    next.disabled = wasNextDisabled;
     if (first) showLogin();
     if (first && error.status === 401) message(status, '');
     else showError(error);
   } finally {
-    if (revision === current) loading = false;
+    if (revision === current) {
+      previous.disabled = page === 1;
+      next.disabled = !hasMore;
+    }
   }
+}
+
+editClose.addEventListener('click', () => editor.close());
+editor.addEventListener('cancel', event => {
+  if (editClose.disabled) event.preventDefault();
+});
+editor.addEventListener('close', () => {
+  editProduct.reset();
+  editPurchase.reset();
+  editPurchase.elements.productId.replaceChildren();
+});
+
+for (const form of [editProduct, editPurchase]) {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (editClose.disabled) return;
+    const purchase = form === editPurchase;
+    const body = { id: editingId, ...Object.fromEntries(new FormData(form)) };
+    const numericField = purchase ? 'quantity' : 'target';
+    body[numericField] = Number(body[numericField]);
+    message(editStatus, '');
+    editClose.disabled = true;
+    await busy(form.querySelector('button'), async () => {
+      try {
+        await request(purchase ? 'update-purchase' : 'update-product', { body });
+        editor.close();
+        await refresh(page, purchase ? 'Bildirim güncellendi.' : 'Ürün güncellendi.');
+        status.scrollIntoView({ block: 'nearest' });
+      } catch (error) {
+        if (error.status === 401) showError(error);
+        else message(editStatus, error.message, true);
+      } finally {
+        editClose.disabled = false;
+      }
+    });
+  });
 }
 
 loginForm.addEventListener('submit', async event => {
