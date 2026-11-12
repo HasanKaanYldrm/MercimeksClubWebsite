@@ -87,6 +87,13 @@ function count(value, max) {
   return value;
 }
 
+function purchaseFields(body) {
+  const name = inputText(body.name, 2, 100);
+  const phone = inputText(body.phone, 7, 30).replace(/[\s().-]/g, '');
+  if (!/^\+?[0-9]{7,15}$/.test(phone)) throw new RequestError(400, 'Geçerli bir telefon numarası girin.');
+  return [name, phone, count(body.quantity, 10000)];
+}
+
 function productLink(value) {
   try {
     const link = new URL(inputText(value, 8, 2048));
@@ -133,7 +140,7 @@ async function listProducts(db) {
 }
 
 const purchaseQuery = `
-  SELECT b.id, b.name, b.phone, p.name AS product, b.quantity, b.device_id, b.created_at
+  SELECT b.id, b.product_id, b.name, b.phone, p.name AS product, b.quantity, b.device_id, b.created_at
   FROM purchases b JOIN products p ON p.id=b.product_id
   ORDER BY b.created_at DESC, b.id DESC`;
 
@@ -215,7 +222,10 @@ export function createHandler(getDb) {
       const params = new URL(req.url, 'http://localhost').searchParams;
       const action = params.get('action') ?? 'products';
       const getActions = ['products', 'admin', 'export'];
-      const postActions = ['device', 'purchase', 'login', 'logout', 'product', 'target'];
+      const postActions = [
+        'device', 'purchase', 'login', 'logout', 'product', 'target',
+        'update-product', 'delete-product', 'update-purchase', 'delete-purchase'
+      ];
       const expected = getActions.includes(action) ? 'GET' : postActions.includes(action) ? 'POST' : null;
       if (!expected) throw new RequestError(404, 'İşlem bulunamadı.');
       if (req.method !== expected) {
@@ -243,10 +253,7 @@ export function createHandler(getDb) {
           || !uuid.test(body.id) || !uuid.test(body.productId)) {
           throw new RequestError(400, 'Geçersiz ürün veya bildirim.');
         }
-        const name = inputText(body.name, 2, 100);
-        const phone = inputText(body.phone, 7, 30).replace(/[\s().-]/g, '');
-        if (!/^\+?[0-9]{7,15}$/.test(phone)) throw new RequestError(400, 'Geçerli bir telefon numarası girin.');
-        const quantity = count(body.quantity, 10000);
+        const [name, phone, quantity] = purchaseFields(body);
         const deviceId = sign('stored-device', id);
         const prior = await db.query('SELECT device_id FROM purchases WHERE id=$1', [body.id]);
         if (prior.rows[0]?.device_id === deviceId) return json(res, { ok: true });
@@ -300,22 +307,58 @@ export function createHandler(getDb) {
         return json(res, { products, purchases: result.rows.slice(0, 50), hasMore: result.rows.length > 50 });
       }
       if (action === 'export') return await exportPurchases(db, res);
-      if (action === 'product') {
+      if (action !== 'product' && (typeof body.id !== 'string' || !uuid.test(body.id))) {
+        throw new RequestError(400, 'Geçersiz ürün veya bildirim.');
+      }
+      if (action === 'product' || action === 'update-product') {
         const name = inputText(body.name, 2, 100);
         const description = inputText(body.description, 2, 1500, true);
         const link = productLink(body.url);
         const target = count(body.target, 1000000);
-        await db.query('INSERT INTO products (id,name,description,url,target) VALUES ($1,$2,$3,$4,$5)',
-          [randomUUID(), name, description, link, target]);
-        return json(res, { ok: true }, 201);
+        if (action === 'product') {
+          await db.query('INSERT INTO products (id,name,description,url,target) VALUES ($1,$2,$3,$4,$5)',
+            [randomUUID(), name, description, link, target]);
+          return json(res, { ok: true }, 201);
+        }
+        const result = await db.query(
+          'UPDATE products SET name=$2, description=$3, url=$4, target=$5 WHERE id=$1',
+          [body.id, name, description, link, target]
+        );
+        if (!result.rowCount) throw new RequestError(404, 'Ürün bulunamadı.');
+        return json(res, { ok: true });
       }
-      if (typeof body.id !== 'string' || !uuid.test(body.id)) throw new RequestError(400, 'Geçersiz ürün.');
+      if (action === 'delete-product') {
+        const result = await db.query(`
+          WITH removed_purchases AS (DELETE FROM purchases WHERE product_id=$1)
+          DELETE FROM products WHERE id=$1`, [body.id]);
+        if (!result.rowCount) throw new RequestError(404, 'Ürün bulunamadı.');
+        return json(res, { ok: true });
+      }
+      if (action === 'update-purchase') {
+        if (typeof body.productId !== 'string' || !uuid.test(body.productId)) {
+          throw new RequestError(400, 'Geçersiz ürün.');
+        }
+        const result = await db.query(`
+          UPDATE purchases AS b SET product_id=p.id, name=$3, phone=$4, quantity=$5
+          FROM products AS p WHERE b.id=$1 AND p.id=$2`,
+        [body.id, body.productId, ...purchaseFields(body)]);
+        if (!result.rowCount) throw new RequestError(404, 'Bildirim veya ürün bulunamadı.');
+        return json(res, { ok: true });
+      }
+      if (action === 'delete-purchase') {
+        const result = await db.query('DELETE FROM purchases WHERE id=$1', [body.id]);
+        if (!result.rowCount) throw new RequestError(404, 'Bildirim bulunamadı.');
+        return json(res, { ok: true });
+      }
       const result = await db.query('UPDATE products SET target=$1 WHERE id=$2',
         [count(body.target, 1000000), body.id]);
       if (!result.rowCount) throw new RequestError(404, 'Ürün bulunamadı.');
       return json(res, { ok: true });
     } catch (error) {
       if (error instanceof RequestError) return json(res, { error: error.message }, error.status);
+      if (error.code === '23503') {
+        return json(res, { error: 'Ürün veya bildirim değişti. Sayfayı yenileyip tekrar deneyin.' }, 409);
+      }
       console.error('Campaign request failed', { code: error.code ?? error.name });
       return json(res, { error: 'İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin.' }, 503);
     }
